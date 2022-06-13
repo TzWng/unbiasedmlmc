@@ -1,3 +1,5 @@
+This package is based on the package "unbiasedmcmc" by Pierre E. Jacob on <https://github.com/pierrejacob/unbiasedmcmc>.
+
 The package contains data and code to reproduce the results of “Unbiased Multilevel Monte Carlo methods for intractable distributions: MLMC meets MCMC”, by Guanyang Wang and Tianze Wang, available at <https://arxiv.org/abs/2204.04808>
 
 
