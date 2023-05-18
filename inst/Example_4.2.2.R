@@ -13,9 +13,9 @@ p <- 0.7
 # nrep samples required
 nrep <- 205
 # An integer at which to start computing the unbiased estimator
-k <- 800#8000
+k <- 4000
 # A time horizon: the chains are sampled until the maximum between m and the meeting time
-m <- 1000#10000
+m <- 8000
 # g function
 g1 = function(x){g = x[1]/x[2];return(g)}
 n_calls = 2^(rgeom(nrep,p)+1)
@@ -35,37 +35,41 @@ for (i in 1:nrep){
 
 
 
-
-
-
-### MCMC
-# probability of performing swap moves
-proba_swapmove <- 0.01
-niterations <- 1e5 + 8000
-# history
-history_sumstates <- matrix(0, ncol = nchains, nrow = niterations)
-# precomputed probability for single-site flips
-ss_ <- c(-4,-2,0,2,4)
-probas_ <-  sapply(betas, function(beta) exp(ss_*beta) / (exp(ss_*beta) + exp(-ss_*beta)))
-# initialization
-current_states <- ising_pt_rinit(nchains, size)
-sumstates <- unlist(lapply(current_states, ising_sum))
-sumstates <- 1/exp(betas*sumstates)
-history_sumstates[1,] <- sumstates
-nswap_attempts <- 0
-nswap_accepts <- rep(0, nchains-1)
-# MCMC loop
-for (iteration in 2:niterations){
-  res_ <- ising_pt_single_kernel(current_states, sumstates, betas, probas_, proba_swapmove)
-  current_states <- res_$chain_states
-  sumstates <- res_$sumstates
-  nswap_accepts <- nswap_accepts + res_$nswap_accepts
-  nswap_attempts <- nswap_attempts + res_$nswap_attempts
-  history_sumstates[iteration,] <- sumstates
+### standard MCMC estimator
+# size of the grid
+size <- 12
+## function for generate mcmc estimator with same cost as unbiased mcmc_mlmc
+mcmc_sample <- function(beta){
+  p <- 0.7
+  n_calls = 2^(rgeom(nrep,p)+1)
+  m = 8000
+  total = m*n_calls[i]
+  burnin = 0
+  chain = 0
+  ss_ <- c(-4,-2,0,2,4)
+  proba_ <-  exp(ss_*beta) / (exp(ss_*beta) + exp(-ss_*beta))
+  # initialization
+  current_states <- ising_rinit(size)
+  sumstates = 1/exp(beta*ising_sum(current_states))
+  # MCMC loop
+  for (iteration in 2:total){
+    current_states <- ising_single_kernel(current_states, proba_)
+    sumstates = 1/exp(beta*ising_sum(current_states))
+    if(iteration > burnin){
+      chain <- chain + sumstates
+    }
+  }
+  chain_mean = chain/(total - burnin)
+  return(chain_mean)
 }
 
-mcmc_estimates = apply(history_sumstates[8001:niterations,],2,mean)
-#mcmc_estimates[1:5]
-for(i in 8001:niterations){
-  print(history_sumstates[i,1:5])
+## Example 1/Z(theta) where theta form 0.02 to 0.06
+nrep = 50
+for(i in 1:nrep){
+  Z = rep(0,5)
+  for(j in 1:length(Z)){
+    beta = seq(0.02,0.06,0.01)
+    Z[j] = mcmc_sample(beta[j])
+  }
+  print(Z)
 }
