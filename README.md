@@ -15,7 +15,8 @@ devtools::install_github("TzWng/unbiasedmlmc")
 
 ### Numerical Examples
 
-All the examples in the paper can be reproduced using the code in the file "inst"
+All the examples in the paper can be reproduced using the code in the file "inst". 
+One can run the code on clusters with the shell files.
 
 ### Figures
 
