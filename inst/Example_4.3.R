@@ -41,7 +41,7 @@ plummer_module2_loglikelihood_ <- function(theta1,theta2,ncases,Npop_normalized)
   return(eval)
 }
 
-
+## Unbiased estimator for E(lambda_d)
 samplejoa <- function(nsamples, k, m){
   ## (modify nsamples if desired)
   # first sample theta1's and compute posterior mean under first model
@@ -63,15 +63,15 @@ samplejoa <- function(nsamples, k, m){
     x[irep, ] = theta2s[irep, 2] + theta1 * theta2s[irep, 1] + Npop_normalized
   }
   return(x)
-  # return(apply(x,1,max))
 }
-
 
 
 g <- function(x){
   return(max(x))
 }
 
+
+## Unbiased estimator for E[max_d E(lambda_d)]
 k <- 2000
 m <- 3000
 dimension <- 2
@@ -87,12 +87,40 @@ for (i in 1:nrep){
 }
 
 
-### JoA estimator
-# nrep = 205
-# result = samplejoa(nrep, k, m)
-# for(i in 1:nrep){
-#   print(result[i])
-# }
+
+## Standard mcmc estimator under same m and 10% burn-in
+dimension <- 2
+for (i in 1:nrep){
+  nsamples = n_calls[i]
+  theta1s <- sample_module1(nsamples)
+  theta1hat <- colMeans(theta1s)
+  ## then try to perform inference on theta2 given theta1hat
+  Sigma_proposal <- diag(0.1, dimension, dimension)
+  init_mean <- rep(0, dimension)
+  init_Sigma <- diag(1, dimension, dimension)
+  x <- matrix(nrow = nsamples, ncol = 13)
+  ## first run standard MCMC
+  for (j in 1:nsamples){
+    theta1 <- theta1s[j,]
+    pb <- get_kernels(theta1, Sigma_proposal, init_mean, init_Sigma)
+    niterations <- m
+    chain <- matrix(0, nrow = niterations, ncol = dimension)
+    state <- pb$rinit()
+    for (iteration in 1:niterations){
+      state <- pb$single_kernel(state)
+      chain[iteration,] <- state$chain_state
+    }
+    chain_postburn <- chain[(m/10):niterations,]
+    chain_mean <- colMeans(chain_postburn)
+    x[j, ] = chain_mean[2] + theta1 * chain_mean[1] + Npop_normalized
+  }
+  Z = apply(x,2,mean)
+  print(max(Z))
+}
+
+
+
+
 
 
 
